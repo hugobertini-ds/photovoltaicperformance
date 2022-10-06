@@ -1,2 +1,2 @@
 # photovoltaicperformance
-Photovoltaic performance monitoring and forecasting
+Tracking and forecasting photovoltaic performance vs weather information vs electricity provider rates
