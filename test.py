@@ -2,6 +2,14 @@ import vaex
 import pandas as pd
 
 def main():
+    print("loading hdf5 file...")
+    df = vaex.open('data/20221009_230639.hdf5')
+    print(f"hdf5 file loaded.\n{df}\ndimensions: {df.shape}. describing...")
+    #print(df.describe())
+    #print("hdf5 file described.")
+
+
+def main_old():
     df1 = vaex.from_pandas(pd.read_excel("data/Consumos_202201_20220927.xlsx", skiprows=8))
     # rename columns for analysis convenience
     # from: Data 	Hora 	Consumo registado kW
@@ -20,6 +28,7 @@ def main():
     df2.rename('Data da Leitura', 'Date')
     df2.rename('Origem', 'Source')
     df2.rename('Estado', 'Status')
+    df2.rename(' ', 'ConsumedOrProduced')
     # print(df2.tail(2))
 
     print(f"df2:\n{df2.describe()}")

@@ -75,7 +75,7 @@ def get_consumption_data(input_folder, consumed_folder):
 
 
 
-def save_to_disk(df, destination_folder):
+def save_df_to_disk(df, destination_folder):
     """
     saves the content of a vaex DataFrame to an existing & accessible storage location
     in:     vaex dataframe presumably containing data
@@ -93,8 +93,7 @@ def save_to_disk(df, destination_folder):
         now = str(current_time).split(".")[0].replace(" ", "_").replace(":", "").replace("-", "")
 
         # now is a good time to store the data
-        df.export_hdf5(f"{destination_folder}/{df.name}_{now}.hdf5")
-        print("I believe the data was saved to disk!")
+        df.export(f'{destination_folder}/{df.name}_{now}.csv', progress=True)
         print(f"{df.name} was saved to permanent storage")
     return df.shape[0]
 

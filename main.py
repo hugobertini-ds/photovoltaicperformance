@@ -15,5 +15,5 @@ print(consumption_df.describe())
 consumption_df.name = "consumption_df"
 
 # let's save the data to disk now
-save_to_disk(consumption_df, data_functional_folder)
+save_df_to_disk(consumption_df, data_functional_folder)
 
