@@ -1,3 +1,7 @@
+#
+# main.py
+#
+
 # establishes the workflow pipeline of the analysis
 
 from photovoltaicperformance import *

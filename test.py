@@ -1,12 +1,30 @@
+import ntplib
+import datetime
+from time import ctime
 import vaex
 import pandas as pd
 
 def main():
-    print("loading hdf5 file...")
-    df = vaex.open('data/20221009_230639.hdf5')
-    print(f"hdf5 file loaded.\n{df}\ndimensions: {df.shape}. describing...")
-    #print(df.describe())
-    #print("hdf5 file described.")
+    c = ntplib.NTPClient()
+    response = c.request('europe.pool.ntp.org', version=3)
+    print(f"offset from ntp: {response.offset}")
+    print(response.version)
+
+    current_time = datetime.datetime.now()
+
+    print(f"ntp time: {ctime(response.tx_time)}")
+    print(f"machine time: {current_time}")
+
+
+
+
+def main_old_2():
+    filename = "./data/consumption_df_20221014_213339.arrow"
+    print(f"loading {filename}...")
+    df = vaex.open(filename)
+    print(f"{filename} loaded.\n{df}\ndimensions: {df.shape}. describing...")
+    print(df.describe())
+    print(f"{filename} file described.")
 
 
 def main_old():

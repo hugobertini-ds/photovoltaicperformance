@@ -1,4 +1,8 @@
-# contains the function that will be used throughout the analysis pipeline flow
+#
+#  photovoltaicperformance.py
+#
+
+# contains the functions that will be used throughout the analysis pipeline flow
 
 # import the needed libraries
 import vaex          # I tend to prefer using lazy computation strategies, so I picked vaex over Pandas for doing the hard work on the data
@@ -93,8 +97,13 @@ def save_df_to_disk(df, destination_folder):
         now = str(current_time).split(".")[0].replace(" ", "_").replace(":", "").replace("-", "")
 
         # now is a good time to store the data
-        df.export(f'{destination_folder}/{df.name}_{now}.csv', progress=True)
-        print(f"{df.name} was saved to permanent storage")
+        print(f"{df.name} was saved to permanent storage as csv.")
+        file_extension = "arrow"
+        print(f"saving as {file_extension}...")
+        #df.export(f'{destination_folder}/{df.name}_{now}.{file_extension}', progress=True)
+        filename = f'{destination_folder}/{df.name}_{now}.{file_extension}'
+        df.export(filename, progress=True)
+        print(f"{df.name} was saved to permanent storage as {filename} file.")
     return df.shape[0]
 
 
