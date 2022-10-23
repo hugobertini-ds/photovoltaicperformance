@@ -5,12 +5,20 @@
 # contains the functions that will be used throughout the analysis pipeline flow
 
 # import the needed libraries
+import os            # Needed for interacting with the permanent storage
 import vaex          # I tend to prefer using lazy computation strategies, so I picked vaex over Pandas for doing the hard work on the data
 import pandas as pd  # Still, Pandas is to be used to assist with the data loading process
 import datetime      # We need this to come up with a proper name for disk-stored dataframes
+#import time          # Maybe needed by Shelly's handling tasks
+import json          # Needed to handle shelly's responses
+import requests      # Needed to interact with Shelly's REST API
 
 
 
+
+#
+# functions for handling consumption data
+#
 def get_consumption_data(input_folder, consumed_folder):
     """
     the data is expected to follow either a daily (Leituras*.xlsx) or a 15-minute basis (Consumos*.xlsx)
@@ -19,13 +27,11 @@ def get_consumption_data(input_folder, consumed_folder):
                  while the 15-minute data will not distinguish consumption periods (vazio aka economy, ponta and cheias)
 
     input:  input and consumed folder names (with no ending slash '/')
-    return: dataframe vaex dataframe with columns:
+    return: vaex dataframe with columns:
         date, time,
         daily_origin, daily_status, daily_consumed, daily_vazio, daily_ponta, daily_cheias,
         15min_consumption
     """
-    import os
-
     # initialize the dataframe
     vx_df = vaex.from_pandas(pd.DataFrame(
         columns=["Date", "Time", "RecordedConsumedkW", "Source", "Status", "ConsumedOrProduced", "Vazio", "Ponta",
@@ -70,7 +76,7 @@ def get_consumption_data(input_folder, consumed_folder):
         # if(vx_df.shape[0] > 0):
         #    print(f"current dataframe: \n{vx_df.tail(2)}")
 
-    # print the resulting iidataframe
+    # print the resulting dataframe
     # print(vx_df)
     print(f"Total records collected: {vx_df.shape[0]}.")
 
@@ -78,6 +84,102 @@ def get_consumption_data(input_folder, consumed_folder):
     return vx_df
 
 
+
+#
+# functions for handling photovoltaic production data
+#
+def get_counters(shelly_meter):
+    """
+    get the counters from the shelly_meter json object
+    return the counters as a list
+    """
+    r = json.loads(shelly_meter)
+    return r['counters']
+
+
+def request_shelly_meter(shelly_address):
+    """
+    request the meters from the shelly device
+    return the meter status as json
+    """
+    resp = requests.get(shelly_address)
+    if resp.status_code == 200:
+        #print(f"response:\n{resp.text}")
+        r = resp.text
+    else:
+        print("no response from Shelly")
+        r = False
+    return r
+
+
+
+def get_prodution_data(input_folder, consumed_folder):
+    """
+    the data is expected to follow a 15-minute basis (Photovoltaic_Production_yyyymmdd_hhMMss.csv)
+    the dataframe returned will contain the data.
+
+    input : input and consumed folder names (with no ending slash '/')
+    return: vaex dataframe with columns:
+        date, time,
+        power_1min, power_2min, power_3min
+    """
+    # initialize the dataframe
+    vx_df = vaex.from_pandas(pd.DataFrame(
+        columns=["Date", "Time", "RecordedConsumedkW", "Source", "Status", "ConsumedOrProduced", "Vazio", "Ponta",
+                 "Cheias"]))
+
+    # read folder contents
+    for x in os.listdir(input_folder):
+        # read daily data: Leituras
+        if x.startswith("Leituras") and x.endswith(".xlsx"):
+            # getting daily data
+            df = vaex.from_pandas(pd.read_excel(f"{input_folder}/{x}", skiprows=7))
+            # rename columns for analysis convenience
+            # from: Data da Leitura 	Origem 	Estado 		Vazio 	Ponta 	Cheias
+            #   to: Data 	Source 	Status 		Vazio 	Ponta 	Cheias
+            df.rename('Data da Leitura', 'Date')
+            df.rename('Origem', 'Source')
+            df.rename('Estado', 'Status')
+            df.rename(' ', 'ConsumedOrProduced')
+            vx_df = vaex.concat([vx_df, df])
+            # print(f"{vx_df.shape} daily records consumed.")
+
+        # read 15-minute data: Consumos
+        if x.startswith("Consumos") and x.endswith(".xlsx"):
+            # getting 15-minute data
+            df = vaex.from_pandas(pd.read_excel(f"{input_folder}/{x}", skiprows=8))
+            # rename columns for analysis convenience
+            # from: Data 	Hora 	Consumo registado kW
+            #   to: Date 	Time 	RecordedConsumedkW
+            df.rename('Data', 'Date')
+            df.rename('Hora', 'Time')
+            df.rename('Consumo registado kW', 'RecordedConsumedkW')
+            vx_df = vaex.concat([vx_df, df])
+            # print(f"{vx_df.shape} 15-min records consumed.")
+
+        # move consumed data file to "consumed" folder
+        if x.endswith(".xlsx"):
+            print(f"{df.shape[0]} records contributed from {x}!")
+            # after reading data, move the file to "consumed" folder
+            #os.rename(f"{input_folder}/{x}", f"{consumed_folder}/{x}")
+            pass
+        # if the dataframe is not empty, then print its head
+        # if(vx_df.shape[0] > 0):
+        #    print(f"current dataframe: \n{vx_df.tail(2)}")
+
+    # print the resulting dataframe
+    # print(vx_df)
+    print(f"Total records collected: {vx_df.shape[0]}.")
+
+    # return the resulting dataframe
+    return vx_df
+
+
+
+
+#
+# generic functions for common use between features
+#
 
 def save_df_to_disk(df, destination_folder):
     """
@@ -105,6 +207,3 @@ def save_df_to_disk(df, destination_folder):
         df.export(filename, progress=True)
         print(f"{df.name} was saved to permanent storage as {filename} file.")
     return df.shape[0]
-
-
-
