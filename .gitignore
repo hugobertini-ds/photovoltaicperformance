@@ -1,8 +1,11 @@
 # custom items
 data/
 data/consumed/
+data/in
 .idea/
 *.hdf5
+*.arrow
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
